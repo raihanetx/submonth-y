@@ -185,7 +185,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $redirect_url = 'admin.php?view=reviews';
             break;
         case 'place_order':
-            $order_data = $json_data['order']; $pdo->beginTransaction();
+            $order_data = $json_data['order'];
+
+            // Server-side validation for Transaction ID
+            $payment_method = $order_data['paymentInfo']['method'];
+            $trx_id = $order_data['paymentInfo']['trx_id'];
+            $is_valid = false;
+
+            switch ($payment_method) {
+                case 'bKash':
+                case 'Upay':
+                    $is_valid = preg_match('/^(?=.{10}$)(?=.*[A-Z])(?=.*\d)[A-Z0-9]+$/', $trx_id);
+                    break;
+                case 'Nagad':
+                    $is_valid = preg_match('/^[A-Z0-9]{8}$/', $trx_id);
+                    break;
+                case 'Rocket':
+                    $is_valid = preg_match('/^\d{10}$/', $trx_id);
+                    break;
+                case 'Binance Pay':
+                    $is_valid = preg_match('/^[A-Za-z0-9]{17}$/', $trx_id);
+                    break;
+                default:
+                    $is_valid = !empty($trx_id); // Basic check for other methods
+            }
+
+            if (!$is_valid) {
+                header('Content-Type: application/json', true, 400);
+                echo json_encode(['success' => false, 'message' => 'Invalid Transaction ID.']);
+                exit;
+            }
+
+            $pdo->beginTransaction();
             try {
                 $order_id_unique = time();
                 $subtotal = 0; foreach($order_data['items'] as $item) { $subtotal += $item['pricing']['price'] * $item['quantity']; }

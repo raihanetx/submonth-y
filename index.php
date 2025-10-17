@@ -1146,15 +1146,25 @@ if ($request_path) {
                         return;
                     }
 
-                    let trxIdRegex = /^[a-zA-Z0-9]{8,}$/; 
-                    let invalidMessage = "Please enter a valid Transaction ID.";
-                    
-                    if (this.selectedPayment.name === 'bKash' || this.selectedPayment.name === 'Nagad') {
-                        trxIdRegex = /^[a-zA-Z0-9]{10}$/;
-                        invalidMessage = `Please enter a valid 10-character ${this.selectedPayment.name} Transaction ID.`;
-                    } else if (this.selectedPayment.name === 'Binance Pay') {
-                        trxIdRegex = /^[0-9]{19}$/;
-                        invalidMessage = "Please enter a valid 19-digit Binance Pay Order ID.";
+                    let trxIdRegex;
+                    let invalidMessage = "Please input a valid transaction id";
+
+                    switch (this.selectedPayment.name) {
+                        case 'bKash':
+                        case 'Upay':
+                            trxIdRegex = /^(?=.{10}$)(?=.*[A-Z])(?=.*\d)[A-Z0-9]+$/;
+                            break;
+                        case 'Nagad':
+                            trxIdRegex = /^[A-Z0-9]{8}$/;
+                            break;
+                        case 'Rocket':
+                            trxIdRegex = /^\d{10}$/;
+                            break;
+                        case 'Binance Pay':
+                            trxIdRegex = /^[A-Za-z0-9]{17}$/;
+                            break;
+                        default:
+                            trxIdRegex = /.+/; // Default: any non-empty string
                     }
 
                     if (!trxIdRegex.test(this.paymentForm.trx_id)) {
