@@ -1,15 +1,9 @@
 <?php
 // api.php - FINAL & COMPLETE version with ALL data in MySQL
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
-require 'PHPMailer/Exception.php';
-require 'PHPMailer/PHPMailer.php';
-require 'PHPMailer/SMTP.php';
-
 session_start();
 require_once 'db.php';
+require_once 'mail.php';
 
 $upload_dir = 'uploads/';
 
@@ -34,7 +28,6 @@ function update_setting($pdo, $key, $value) {
 
 function slugify($text) { if (empty($text)) return 'n-a-' . rand(100, 999); $text = preg_replace('~[^\pL\d]+~u', '-', $text); if (function_exists('iconv')) { $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text); } $text = preg_replace('~[^-\w]+~', '', $text); $text = trim($text, '-'); $text = preg_replace('~-+~', '-', $text); $text = strtolower($text); return $text; }
 function handle_image_upload($file_input, $upload_dir, $prefix = '') { if (isset($file_input) && $file_input['error'] === UPLOAD_ERR_OK) { $original_filename = basename($file_input['name']); $safe_filename = preg_replace("/[^a-zA-Z0-9-_\.]/", "", $original_filename); $destination = $upload_dir . $prefix . time() . '-' . uniqid() . '-' . $safe_filename; if (move_uploaded_file($file_input['tmp_name'], $destination)) { return $destination; } } return null; }
-function send_email($to, $subject, $body, $config) { $mail = new PHPMailer(true); $smtp_settings = $config['smtp_settings'] ?? []; $admin_email = $smtp_settings['admin_email'] ?? ''; $app_password = $smtp_settings['app_password'] ?? ''; if (empty($admin_email) || empty($app_password)) return false; try { $mail->CharSet = 'UTF-8'; $mail->isSMTP(); $mail->Host = 'smtp.gmail.com'; $mail->SMTPAuth = true; $mail->Username = $admin_email; $mail->Password = $app_password; $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; $mail->Port = 465; $mail->setFrom($admin_email, 'Submonth'); $mail->addAddress($to); $mail->isHTML(true); $mail->Subject = $subject; $mail->Body = $body; $mail->send(); return true; } catch (Exception $e) { return false; } }
 
 if (!is_dir($upload_dir)) { mkdir($upload_dir, 0777, true); }
 $site_config = get_all_settings($pdo);
