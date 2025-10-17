@@ -727,9 +727,9 @@ if ($request_path) {
                                                 <div class="flex items-center gap-6">
                                                     <template v-for="(method, name) in paymentMethods" :key="name">
                                                         <button type="button" @click="selectPayment(method, name)" 
-                                                                :class="{'border-violet-500 ring-2 ring-violet-200': selectedPayment && selectedPayment.name === name, 'border-gray-300': !selectedPayment || selectedPayment.name !== name}" 
-                                                                class="w-20 h-20 p-2 border-2 rounded-lg flex items-center justify-center transition">
-                                                            <img :src="basePath + '/' + method.logo_url" :alt="name" class="max-h-16 object-contain">
+                                                                :class="{'border-violet-500': selectedPayment && selectedPayment.name === name, 'border-gray-300': !selectedPayment || selectedPayment.name !== name}"
+                                                                class="w-20 h-20 border-2 rounded-lg flex items-center justify-center transition overflow-hidden">
+                                                            <img :src="basePath + '/' + method.logo_url" :alt="name" class="w-full h-full object-cover">
                                                         </button>
                                                     </template>
                                                 </div>
@@ -738,7 +738,7 @@ if ($request_path) {
                                             <template v-if="selectedPayment">
                                                 <div class="mt-4 space-y-4 pt-4 border-t">
                                                     <div>
-                                                        <p class="text-gray-700 font-medium text-base">Please send the total amount to the following <strong>{{ selectedPayment.name }}</strong> <span>{{ selectedPayment.name === 'Binance Pay' ? 'Pay ID' : 'number' }}</span>:</p>
+                                                        <p class="text-gray-700 font-medium text-base"><strong>{{ selectedPayment.name }} {{ selectedPayment.name === 'Binance Pay' ? 'Pay ID' : 'Number' }}</strong></p>
                                                         <div class="flex items-center justify-start gap-3 mt-2">
                                                             <span ref="paymentNumber" class="text-lg font-bold text-gray-800">{{ selectedPayment.pay_id || selectedPayment.number }}</span>
                                                             <button type="button" @click="copyToClipboard(selectedPayment.pay_id || selectedPayment.number)" class="text-gray-500 hover:text-gray-800 transition" :class="{'text-green-600': copySuccess}">
@@ -753,9 +753,10 @@ if ($request_path) {
                                                     <div>
                                                         <h4 class="text-sm font-semibold text-gray-800 mb-2 font-display tracking-wider">Instructions</h4>
                                                         <ul class="list-disc list-inside text-xs text-gray-600 space-y-1">
-                                                            <li v-if="selectedPayment.name === 'bKash' || selectedPayment.name === 'Nagad'">Open your {{ selectedPayment.name }} app and select 'Send Money'.</li>
-                                                            <li v-if="selectedPayment.name === 'Binance Pay'">Open your Binance app and select 'Pay'.</li>
-                                                            <li>Enter the {{ selectedPayment.name === 'Binance Pay' ? 'Pay ID' : 'number' }} provided above and the total amount.</li>
+                                                            <li>First, copy the payment number (or Pay ID) above.</li>
+                                                            <li v-if="selectedPayment.name === 'bKash' || selectedPayment.name === 'Nagad'">Then, open your {{ selectedPayment.name }} app and select 'Send Money'.</li>
+                                                            <li v-if="selectedPayment.name === 'Binance Pay'">Then, open your Binance app and select 'Pay'.</li>
+                                                            <li>Enter the copied {{ selectedPayment.name === 'Binance Pay' ? 'Pay ID' : 'number' }} and the total amount.</li>
                                                             <li>Complete the transaction and copy the Transaction ID.</li>
                                                             <li>Paste the ID in the field below.</li>
                                                         </ul>
