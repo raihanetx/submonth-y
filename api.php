@@ -80,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if (!$action) { http_response_code(400); die("Action not specified."); }
 
-    $admin_actions = ['add_category', 'delete_category', 'edit_category', 'add_product', 'delete_product', 'edit_product', 'add_coupon', 'delete_coupon', 'update_review_status', 'update_order_status', 'update_hero_banner', 'update_favicon', 'update_currency_rate', 'update_contact_info', 'update_admin_password', 'update_site_logo', 'update_hot_deals', 'update_payment_methods', 'update_smtp_settings', 'send_manual_email', 'update_page_content'];
+    $admin_actions = ['add_category', 'delete_category', 'edit_category', 'add_product', 'delete_product', 'edit_product', 'add_coupon', 'delete_coupon', 'update_review_status', 'update_order_status', 'update_hero_banner', 'update_favicon', 'update_currency_rate', 'update_contact_info', 'update_admin_password', 'update_site_logo', 'update_hot_deals', 'update_payment_methods', 'add_payment_method', 'delete_payment_method', 'update_smtp_settings', 'send_manual_email', 'update_page_content'];
     if (in_array($action, $admin_actions)) {
         if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             http_response_code(403); die("Forbidden: You must be logged in.");
@@ -263,16 +263,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
         case 'update_payment_methods':
             $payment_methods = $site_config['payment_methods'] ?? [];
-            foreach ($_POST['payment_methods'] as $name => $details) {
-                if (isset($details['number'])) $payment_methods[$name]['number'] = htmlspecialchars(trim($details['number']));
-                if (isset($details['pay_id'])) $payment_methods[$name]['pay_id'] = htmlspecialchars(trim($details['pay_id']));
-                if (isset($_POST['delete_logos'][$name]) && !empty($payment_methods[$name]['logo_url']) && file_exists($payment_methods[$name]['logo_url'])) { unlink($payment_methods[$name]['logo_url']); $payment_methods[$name]['logo_url'] = ''; }
-                if (isset($_FILES['payment_logos']['name'][$name]) && $_FILES['payment_logos']['error'][$name] === UPLOAD_ERR_OK) {
-                    $file = ['name' => $_FILES['payment_logos']['name'][$name], 'tmp_name' => $_FILES['payment_logos']['tmp_name'][$name], 'error' => $_FILES['payment_logos']['error'][$name]];
-                    if($dest = handle_image_upload($file, $upload_dir, 'payment-')) { if(!empty($payment_methods[$name]['logo_url']) && file_exists($payment_methods[$name]['logo_url'])) unlink($payment_methods[$name]['logo_url']); $payment_methods[$name]['logo_url'] = $dest; }
+            if (isset($_POST['payment_methods'])) {
+                foreach ($_POST['payment_methods'] as $name => $details) {
+                    // Sanitize the name just in case, though it's from our own keys
+                    $safe_name = htmlspecialchars($name);
+                    if (!isset($payment_methods[$safe_name])) {
+                        continue; // Should not happen with current form, but good practice
+                    }
+                    // Update number or pay_id
+                    if (isset($details['number'])) {
+                        $payment_methods[$safe_name]['number'] = htmlspecialchars(trim($details['number']));
+                        unset($payment_methods[$safe_name]['pay_id']); // Ensure only one type of ID is stored
+                    } elseif (isset($details['pay_id'])) {
+                        $payment_methods[$safe_name]['pay_id'] = htmlspecialchars(trim($details['pay_id']));
+                        unset($payment_methods[$safe_name]['number']);
+                    }
+
+                    // Handle logo deletion
+                    if (isset($_POST['delete_logos'][$safe_name]) && !empty($payment_methods[$safe_name]['logo_url']) && file_exists($payment_methods[$safe_name]['logo_url'])) {
+                        unlink($payment_methods[$safe_name]['logo_url']);
+                        $payment_methods[$safe_name]['logo_url'] = '';
+                    }
+
+                    // Handle new logo upload
+                    if (isset($_FILES['payment_logos']['name'][$safe_name]) && $_FILES['payment_logos']['error'][$safe_name] === UPLOAD_ERR_OK) {
+                        $file = ['name' => $_FILES['payment_logos']['name'][$safe_name], 'tmp_name' => $_FILES['payment_logos']['tmp_name'][$safe_name], 'error' => $_FILES['payment_logos']['error'][$safe_name]];
+                        if ($dest = handle_image_upload($file, $upload_dir, 'payment-')) {
+                            // Delete old logo if a new one is uploaded
+                            if (!empty($payment_methods[$safe_name]['logo_url']) && file_exists($payment_methods[$safe_name]['logo_url'])) {
+                                unlink($payment_methods[$safe_name]['logo_url']);
+                            }
+                            $payment_methods[$safe_name]['logo_url'] = $dest;
+                        }
+                    }
                 }
             }
             update_setting($pdo, 'payment_methods', $payment_methods);
+            $redirect_url = 'admin.php?view=settings';
+            break;
+
+        case 'add_payment_method':
+            $payment_methods = $site_config['payment_methods'] ?? [];
+            $new_name = htmlspecialchars(trim($_POST['new_method_name']));
+            if (!empty($new_name) && !isset($payment_methods[$new_name])) {
+                $new_number = htmlspecialchars(trim($_POST['new_method_number']));
+                $new_logo_path = handle_image_upload($_FILES['new_method_logo'] ?? null, $upload_dir, 'payment-');
+
+                if ($new_logo_path) {
+                    $payment_methods[$new_name] = [
+                        'number' => $new_number,
+                        'logo_url' => $new_logo_path
+                    ];
+                    update_setting($pdo, 'payment_methods', $payment_methods);
+                }
+            }
+            $redirect_url = 'admin.php?view=settings';
+            break;
+
+        case 'delete_payment_method':
+             if (isset($_GET['method'])) {
+                $payment_methods = $site_config['payment_methods'] ?? [];
+                $method_to_delete = $_GET['method'];
+                if (isset($payment_methods[$method_to_delete])) {
+                    // Delete the logo file if it exists
+                    if (!empty($payment_methods[$method_to_delete]['logo_url']) && file_exists($payment_methods[$method_to_delete]['logo_url'])) {
+                        unlink($payment_methods[$method_to_delete]['logo_url']);
+                    }
+                    // Remove the method from the array
+                    unset($payment_methods[$method_to_delete]);
+                    update_setting($pdo, 'payment_methods', $payment_methods);
+                }
+            }
             $redirect_url = 'admin.php?view=settings';
             break;
         case 'update_smtp_settings':
