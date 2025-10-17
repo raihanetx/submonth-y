@@ -564,24 +564,30 @@ $current_view = $_GET['view'] ?? 'dashboard';
                     
                     <!-- Payment Gateway Settings -->
                     <div class="bg-white p-6 rounded-lg border">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Manage Payment Gateways</h3>
+
+                        <!-- Existing Methods -->
                         <form action="api.php" method="POST" enctype="multipart/form-data">
                             <input type="hidden" name="action" value="update_payment_methods">
-                            <h3 class="text-lg font-semibold mb-4 text-gray-800">Payment Gateway Settings</h3>
+                            <h4 class="text-md font-semibold mb-3 text-gray-600">Existing Gateways</h4>
                             <div class="space-y-6">
                                 <?php
                                 $payment_methods_config = $site_config['payment_methods'] ?? [];
-                                $default_methods = ['bKash', 'Nagad', 'Binance Pay'];
-                                foreach ($default_methods as $method_name):
-                                    $method_details = $payment_methods_config[$method_name] ?? [];
-                                    $is_binance = ($method_name === 'Binance Pay');
-                                    $id_field_name = $is_binance ? 'pay_id' : 'number';
+                                if (empty($payment_methods_config)):
                                 ?>
-                                <div class="p-4 border rounded-md bg-gray-50">
+                                    <p class="text-gray-500 text-center py-4">No payment methods configured.</p>
+                                <?php
+                                else:
+                                    foreach ($payment_methods_config as $method_name => $method_details):
+                                        $is_binance = ($method_name === 'Binance Pay'); // Retain special logic if needed
+                                        $id_field_name = $is_binance ? 'pay_id' : 'number';
+                                ?>
+                                <div class="p-4 border rounded-md bg-gray-50 relative">
                                     <h4 class="font-semibold text-gray-700 mb-3"><?= htmlspecialchars($method_name) ?></h4>
                                     <div class="space-y-4">
                                         <div>
-                                            <label class="block mb-1.5 font-medium text-gray-700 text-sm"><?= $is_binance ? 'Pay ID' : 'Number' ?></label>
-                                            <input type="text" name="payment_methods[<?= $method_name ?>][<?= $id_field_name ?>]" class="form-input" value="<?= htmlspecialchars($method_details[$id_field_name] ?? '') ?>">
+                                            <label class="block mb-1.5 font-medium text-gray-700 text-sm">Number / Pay ID</label>
+                                            <input type="text" name="payment_methods[<?= htmlspecialchars($method_name) ?>][<?= $id_field_name ?>]" class="form-input" value="<?= htmlspecialchars($method_details[$id_field_name] ?? '') ?>">
                                         </div>
                                         <div>
                                             <label class="block mb-1.5 font-medium text-gray-700 text-sm">Logo</label>
@@ -589,18 +595,50 @@ $current_view = $_GET['view'] ?? 'dashboard';
                                                 <div class="mb-2">
                                                     <img src="<?= htmlspecialchars($method_details['logo_url']) ?>" class="h-10 border bg-white p-1 rounded-md">
                                                     <div class="flex items-center gap-2 mt-2">
-                                                        <input type="checkbox" name="delete_logos[<?= $method_name ?>]" id="delete_logo_<?= str_replace(' ', '', $method_name) ?>" value="true" class="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500">
-                                                        <label for="delete_logo_<?= str_replace(' ', '', $method_name) ?>" class="text-sm text-red-600 font-medium">Delete current logo</label>
+                                                        <input type="checkbox" name="delete_logos[<?= htmlspecialchars($method_name) ?>]" id="delete_logo_<?= str_replace(' ', '', htmlspecialchars($method_name)) ?>" value="true" class="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500">
+                                                        <label for="delete_logo_<?= str_replace(' ', '', htmlspecialchars($method_name)) ?>" class="text-sm text-red-600 font-medium">Delete current logo</label>
                                                     </div>
                                                 </div>
                                             <?php endif; ?>
-                                            <input type="file" name="payment_logos[<?= $method_name ?>]" class="form-input text-sm" accept="image/*">
+                                            <input type="file" name="payment_logos[<?= htmlspecialchars($method_name) ?>]" class="form-input text-sm" accept="image/*">
                                         </div>
                                     </div>
+                                    <!-- Delete Button for existing method -->
+                                    <div class="absolute top-4 right-4">
+                                        <a href="api.php?action=delete_payment_method&method=<?= urlencode($method_name) ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this payment method?');">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </a>
+                                    </div>
                                 </div>
-                                <?php endforeach; ?>
+                                <?php
+                                    endforeach;
+                                endif;
+                                ?>
                             </div>
-                            <button type="submit" class="btn btn-primary mt-6"><i class="fa-solid fa-floppy-disk"></i> Save Payment Settings</button>
+                            <button type="submit" class="btn btn-primary mt-6"><i class="fa-solid fa-floppy-disk"></i> Save Changes to Existing Gateways</button>
+                        </form>
+
+                        <hr class="my-8">
+
+                        <!-- Add New Method -->
+                        <form action="api.php" method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="action" value="add_payment_method">
+                            <h4 class="text-md font-semibold mb-3 text-gray-600">Add New Payment Gateway</h4>
+                            <div class="p-4 border rounded-md bg-gray-50 space-y-4">
+                                <div>
+                                    <label class="block mb-1.5 font-medium text-gray-700 text-sm">Gateway Name</label>
+                                    <input type="text" name="new_method_name" class="form-input" placeholder="e.g., Rocket" required>
+                                </div>
+                                <div>
+                                    <label class="block mb-1.5 font-medium text-gray-700 text-sm">Number / Pay ID</label>
+                                    <input type="text" name="new_method_number" class="form-input" placeholder="Enter the number or ID" required>
+                                </div>
+                                <div>
+                                    <label class="block mb-1.5 font-medium text-gray-700 text-sm">Logo</label>
+                                    <input type="file" name="new_method_logo" class="form-input text-sm" accept="image/*" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-success mt-6"><i class="fa-solid fa-plus"></i> Add New Gateway</button>
                         </form>
                     </div>
 

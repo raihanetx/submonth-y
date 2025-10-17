@@ -729,7 +729,7 @@ if ($request_path) {
                                                         <button type="button" @click="selectPayment(method, name)" 
                                                                 :class="{'border-violet-500 ring-2 ring-violet-200': selectedPayment && selectedPayment.name === name, 'border-gray-300': !selectedPayment || selectedPayment.name !== name}" 
                                                                 class="w-20 h-20 p-2 border-2 rounded-lg flex items-center justify-center transition">
-                                                            <img :src="basePath + '/' + method.logo_url" :alt="name" class="max-h-8 object-contain">
+                                                            <img :src="basePath + '/' + method.logo_url" :alt="name" class="max-h-16 object-contain">
                                                         </button>
                                                     </template>
                                                 </div>
