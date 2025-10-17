@@ -372,7 +372,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (isset($_POST['admin_email'])) { $smtp_settings['admin_email'] = htmlspecialchars(trim($_POST['admin_email'])); }
             if (!empty(trim($_POST['app_password']))) { $smtp_settings['app_password'] = trim($_POST['app_password']); }
             update_setting($pdo, 'smtp_settings', $smtp_settings);
-            $redirect_url = 'admin.php?view=settings';
+            $redirect_url = 'admin.php?view=email';
             break;
         case 'update_currency_rate':
             update_setting($pdo, 'usd_to_bdt_rate', (float)$_POST['usd_to_bdt_rate']);

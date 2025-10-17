@@ -244,6 +244,7 @@ $current_view = $_GET['view'] ?? 'dashboard';
                         <a href="admin.php?view=orders" class="tab flex-shrink-0 <?= $current_view === 'orders' ? 'tab-active' : '' ?>"><i class="fa-solid fa-bag-shopping mr-2"></i>Orders <?php if ($pending_orders_count > 0): ?><span class="ml-2 bg-yellow-100 text-yellow-800 text-xs font-bold rounded-full px-2 py-0.5"><?= $pending_orders_count ?></span><?php endif; ?></a>
                         <a href="admin.php?view=reviews" class="tab flex-shrink-0 <?= $current_view === 'reviews' ? 'tab-active' : '' ?>"><i class="fa-solid fa-star mr-2"></i>Reviews <span class="ml-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-full px-2 py-0.5"><?= count($all_reviews) ?></span></a>
                         <a href="admin.php?view=pages" class="tab flex-shrink-0 <?= $current_view === 'pages' ? 'tab-active' : '' ?>"><i class="fa-solid fa-file-lines mr-2"></i>Pages</a>
+                        <a href="admin.php?view=email" class="tab flex-shrink-0 <?= $current_view === 'email' ? 'tab-active' : '' ?>"><i class="fa-solid fa-envelope mr-2"></i>Email Settings</a>
                         <a href="admin.php?view=settings" class="tab flex-shrink-0 <?= $current_view === 'settings' ? 'tab-active' : '' ?>"><i class="fa-solid fa-gear mr-2"></i>Settings</a>
                     </nav>
                 </div>
@@ -463,6 +464,33 @@ $current_view = $_GET['view'] ?? 'dashboard';
                     </form>
                 </div>
 
+                <!-- Email Settings View -->
+                <div id="view-email" style="<?= $current_view === 'email' ? '' : 'display:none;' ?>" class="p-6">
+                    <div class="max-w-2xl mx-auto">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Email & SMTP Settings</h2>
+                        <div class="bg-white p-8 rounded-xl border-2 border-dashed border-gray-200">
+                            <form action="api.php" method="POST">
+                                <input type="hidden" name="action" value="update_smtp_settings">
+                                <div class="space-y-6">
+                                    <div>
+                                        <label for="admin_email" class="block mb-2 font-semibold text-gray-700">Admin Email Address</label>
+                                        <input id="admin_email" type="email" name="admin_email" class="form-input" value="<?= htmlspecialchars($site_config['smtp_settings']['admin_email'] ?? '') ?>" placeholder="e.g., admin@yourdomain.com">
+                                        <p class="text-sm text-gray-500 mt-2">This email receives new order notifications and is used as the 'From' address when sending emails to customers (e.g., order confirmations).</p>
+                                    </div>
+                                    <div>
+                                        <label for="app_password" class="block mb-2 font-semibold text-gray-700">Gmail App Password</label>
+                                        <input id="app_password" type="password" name="app_password" class="form-input" placeholder="Leave blank to keep current password">
+                                         <p class="text-sm text-gray-500 mt-2">Enter the 16-character <a href="https://myaccount.google.com/apppasswords" target="_blank" class="text-purple-600 hover:underline font-medium">App Password</a> from your Google Account settings. This is required to send emails securely via Gmail's SMTP server.</p>
+                                    </div>
+                                </div>
+                                <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end">
+                                    <button type="submit" class="btn btn-primary text-base"><i class="fa-solid fa-floppy-disk"></i> Save SMTP Settings</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Settings View -->
                 <div id="view-settings" style="<?= $current_view === 'settings' ? '' : 'display:none;' ?>" class="p-6 space-y-8 max-w-5xl mx-auto">
                     <!-- Site Identity -->
@@ -543,25 +571,6 @@ $current_view = $_GET['view'] ?? 'dashboard';
                         </form>
                     </div>
 
-                    <!-- Email & SMTP Settings -->
-                    <form action="api.php" method="POST" class="bg-white p-6 rounded-lg border">
-                        <input type="hidden" name="action" value="update_smtp_settings">
-                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Email & SMTP Settings</h3>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block mb-1.5 font-medium text-gray-700 text-sm">Admin Email Address</label>
-                                <input type="email" name="admin_email" class="form-input" value="<?= htmlspecialchars($site_config['smtp_settings']['admin_email'] ?? '') ?>" placeholder="e.g., admin@yourdomain.com">
-                                <p class="text-xs text-gray-500 mt-1">This email receives new order notifications and is used to send emails to customers.</p>
-                            </div>
-                            <div>
-                                <label class="block mb-1.5 font-medium text-gray-700 text-sm">Gmail App Password</label>
-                                <input type="password" name="app_password" class="form-input" placeholder="Leave blank to keep current password">
-                                <p class="text-xs text-gray-500 mt-1">Enter the 16-character App Password from your Google Account settings.</p>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-primary mt-6"><i class="fa-solid fa-floppy-disk"></i> Save SMTP Settings</button>
-                    </form>
-                    
                     <!-- Payment Gateway Settings -->
                     <div class="bg-white p-6 rounded-lg border">
                         <h3 class="text-lg font-semibold mb-4 text-gray-800">Manage Payment Gateways</h3>
